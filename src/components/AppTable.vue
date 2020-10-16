@@ -30,7 +30,9 @@
             <div :title="video.snippet.description" class="more">
               {{ video.snippet.description }}
             </div>
-            <button @click="collect(video)">我要收藏</button>
+            <button v-if="isInCollection(video.id)" @click="cancelCollect(video)">取消收藏</button>
+            <button v-else @click="collect(video)">我要收藏</button>
+
           </td>
         </tr>
         <tr class="app__table-control">
@@ -61,6 +63,8 @@ export default {
   name: "AppTable",
   data() {
     return {
+      favVideos: JSON.parse(localStorage.getItem(`favorite-videos`)) || [],
+
       pagination_nr: 5,
       helpers: {
         start_from: 1,
@@ -93,15 +97,30 @@ export default {
     // this.getVideos();
   },
   methods: {
-    collect(newFavoriteVideo) {
-      const favoriteList =
-        JSON.parse(localStorage.getItem(`favorite-videos`)) || [];
-      let dataToSend = [...favoriteList, newFavoriteVideo];
-      localStorage.setItem(`favorite-videos`, JSON.stringify(dataToSend));
+    collect(video) {
+      if (this.favVideos.some((v) => v.id === video.id)) return;
+
+      this.favVideos = [...this.favVideos, video];
+      localStorage.setItem(`favorite-videos`, JSON.stringify(this.favVideos));
     },
+
+    cancelCollect(video) {
+      const targetIndex = this.favVideos.findIndex(v => v.id === video.id);
+
+      this.favVideos.splice(targetIndex, 1);
+      localStorage.setItem(`favorite-videos`, JSON.stringify(this.favVideos));
+
+      this.$emit('cancel')
+    },
+
+    isInCollection(id) {
+      return this.favVideos.some(v => v.id === id);
+    },
+
     convertTime(duration) {
       return convertTime(duration);
     },
+
     increment() {
       let pageNum = this.pagination_nr,
         ends = this.helpers.end_to,

@@ -26,7 +26,6 @@ export default {
     async getVideos() {
       const { items } = await getVideos();
       this.videos = items;
-      console.log(items);
     },
   },
 };
