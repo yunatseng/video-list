@@ -96,6 +96,9 @@ export default {
     collect(newFavoriteVideo) {
       const favoriteList =
         JSON.parse(localStorage.getItem(`favorite-videos`)) || [];
+
+      if (favoriteList.some((v) => v.id === newFavoriteVideo.id)) return;
+
       let dataToSend = [...favoriteList, newFavoriteVideo];
       localStorage.setItem(`favorite-videos`, JSON.stringify(dataToSend));
     },
