@@ -1,6 +1,4 @@
-# Table Pagination
-### Reusable component built with Vue.js and Vuex
-#### Tools required to run project: IDE/text editor, node.js, browser
+# Video List
 
 ## Build Setup
 
