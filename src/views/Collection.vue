@@ -1,7 +1,7 @@
 <template>
   <div class="collection">
     <a href="/collection"><img width="120" src="../assets/favorite.png"></a>
-    <AppTable :videos="videos"/>
+    <AppTable :videos="videos" @cancel='cancel'/>
   </div>
 </template>
 
@@ -19,6 +19,11 @@ export default {
   created(){
     // const items = { ...localStorage };
     // console.log(items);
+  },
+  methods:{
+      cancel(){
+          this.videos = JSON.parse(localStorage.getItem(`favorite-videos`)) || []
+      }
   },
   components: {
     AppTable
