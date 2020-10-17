@@ -19,10 +19,19 @@
       </thead>
       <tbody>
         <tr v-for="(video, index) in videos" :key="index">
-          <td><router-link :to="{ name: 'videoPage', params: { title: video.snippet.title,description: video.snippet.description}}">
-            <img :src="`${video.snippet.thumbnails.default.url}`" />
+          <td>
+            <router-link
+              :to="{
+                name: 'videoPage',
+                params: {
+                  title: video.snippet.title,
+                  description: video.snippet.description,
+                },
+              }"
+            >
+              <img :src="`${video.snippet.thumbnails.default.url}`" />
             </router-link>
-            </td>
+          </td>
           <td>
             {{ video.snippet.title }}
             <div>
@@ -33,18 +42,32 @@
             <div :title="video.snippet.description" class="more">
               {{ video.snippet.description }}
             </div>
-            <button v-if="isInCollection(video.id)" @click="cancelCollect(video)">取消收藏</button>
+            <button
+              v-if="isInCollection(video.id)"
+              @click="cancelCollect(video)"
+            >
+              取消收藏
+            </button>
             <button v-else @click="collect(video)">我要收藏</button>
-
           </td>
         </tr>
         <tr class="app__table-control">
           <td colspan="3">
-            <div class="app__table-select">Rows per page: 12</div>
-            {{ helpers.start_from }} - {{ helpers.end_to }} of
-            {{ database.length }}
-            <span @click="decrement" class="ion-ios-arrow-left"></span>
-            <span @click="increment" class="ion-ios-arrow-right"></span>
+            <div class="pagination-wrapper">
+              <div class="app__table-select">
+                Rows per page: 12
+              </div>
+
+              <div style="display: flex">
+                <span>first</span>
+                <span @click="decrement" class="ion-ios-arrow-left"></span>
+                <ul class="pagination">
+                  <li :key='i' v-for="(n, i) in 10">{{n }}</li>
+                </ul>
+                <span @click="increment" class="ion-ios-arrow-right"></span>
+                <span>least</span>
+              </div>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -108,16 +131,16 @@ export default {
     },
 
     cancelCollect(video) {
-      const targetIndex = this.favVideos.findIndex(v => v.id === video.id);
+      const targetIndex = this.favVideos.findIndex((v) => v.id === video.id);
 
       this.favVideos.splice(targetIndex, 1);
       localStorage.setItem(`favorite-videos`, JSON.stringify(this.favVideos));
 
-      this.$emit('cancel')
+      this.$emit("cancel");
     },
 
     isInCollection(id) {
-      return this.favVideos.some(v => v.id === id);
+      return this.favVideos.some((v) => v.id === id);
     },
 
     convertTime(duration) {
@@ -302,7 +325,7 @@ td {
 }
 
 .more {
-  width: 650px;
+  max-width: 650px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -324,7 +347,8 @@ tbody {
 .app__table-select {
   display: none;
   @media screen and (min-width: 420px) {
-    display: inline-block;
+    display: flex;
+    margin-right: 20px;
   }
 }
 
@@ -373,12 +397,12 @@ input[type="checkbox"]:checked + label:after {
 
 .ion-ios-arrow-left {
   padding-right: 10px;
-  padding-left: 5px;
+  padding-left: 10px;
 }
 
 .ion-ios-arrow-right {
   padding-right: 10px;
-  padding-left: 5px;
+  padding-left: 10px;
 }
 
 .ion-ios-arrow-left,
@@ -387,4 +411,20 @@ input[type="checkbox"]:checked + label:after {
 } // 5. Modifier
 // 6. State
 // 7. Animations
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.pagination {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pagination li {
+  margin: 0 7px;
+}
 </style>
