@@ -1,222 +1,93 @@
 <template>
-  <div class="app">
-    <table class="app__table">
-      <thead>
-        <tr v-for="(header, index) in headers" :key="index">
-          <td  @click="sort_tasks('task')">
-            {{ header.first }}
-            <span v-if="helpers.sort_task">↓</span>
-          </td>
-          <td  @click="sort_priority('priority')">
-            {{ header.second }}
-            <span v-if="helpers.sort_priority">↓</span>
-          </td>
-          <td  @click="sort_done('done')">
-            {{ header.third }}
-            <span v-if="helpers.sort_done">↓</span>
-          </td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="({ contentDetails, snippet }, index) in videos" :key="index">
-          <td > <img :src="`${snippet.thumbnails.default.url}`"/></td>
-          <td >{{ snippet.title }}<div>影片長度：{{ convertTime(contentDetails.duration) }}</div></td>
-          <td ><div class="more">{{ snippet.description }}</div><BUTTON>我要收藏</BUTTON></td>
-        </tr>
-        <tr class="app__table-control">
-          <td colspan="3">
-            <div class="app__table-select">
-              Rows per page: 12 
-            </div>
-            {{ helpers.start_from }} - {{ helpers.end_to }} of
-            {{ database.length }}
-            <span @click="decrement" class="ion-ios-arrow-left"></span>
-            <span @click="increment" class="ion-ios-arrow-right"></span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div>
+    <h3>預設為影片自動播放且靜音，欲開啟聲音可按下方按鈕 或 影片功能列</h3>
+    <button class="btn" id="unmuteButton" @click="muteControl">靜音切換</button>
+
+    <div v-if="showAD" class="ad">
+      <a
+        href="http://ajtaiwan.com/"
+        target="_blank"
+        class="HPDKSWidget"
+      >
+        <div class="HPDKSWidget-wrap">
+          <p class="HPDKSWidget-text">
+            Perfect Marketing Partner
+            <em class="HPDKSWidget-brand">High Performance Product</em>!
+          </p>
+          <button class="HPDKSWidget-cta">ALLIED JUBILEE &#8594;</button>
+        </div>
+      </a>
+    </div>
+
+    <div>
+      <video
+        ref="video"
+        controls
+        muted
+        autoplay
+        @play="play"
+        @pause="pause"
+      ></video>
+    </div>
+    <div>
+      <h2>{{title}}</h2>
+      <div class="wrap">{{description}}</div>
+    </div>
   </div>
 </template>
 
 <script>
-import { mapState } from "vuex";
+import Hls from "hls.js";
 
-import { getVideos } from '../apis/videos';
-import convertTime from '../components/utility/convertTime.js';
-
+const VIDEO_URL =
+  "https://bitdash-a.akamaihd.net/content/MI201109210084_1/m3u8s/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.m3u8";
 
 export default {
-  name: "AppTable",
+  name: "videoPage",
   data() {
     return {
-      videos: [],
-      pagination_nr: 5,
-      helpers: {
-        start_from: 1,
-        end_to: 5,
-        counter: 2,
-        sort_task: false,
-        sort_priority: false,
-        sort_done: false,
-      },
+      mute: true,
+      showAD: false,
+      title: this.$route.params.title,
+      description:this.$route.params.description
     };
   },
-  computed: mapState(["database", "headers", "headers_on"]),
-  watch: {
-    pagination_nr() {
-      this.videos = this.database.slice(0, this.pagination_nr);
-      this.helpers.start_from = 1;
-      this.helpers.end_to = this.pagination_nr;
-      this.helpers.counter = 2;
-    },
-    database() {
-      this.videos = this.database.slice(0, this.pagination_nr);
-    },
-  },
-  async created() {
-    // this.videos = this.database.slice(0, this.pagination_nr);
-    // if (localStorage.getItem("newTask")) {
-    //   let localState = localStorage.getItem("newTask");
-    //   this.$store.commit("build_DataBase", localState);
-    // }
 
-    this.getVideos();
-  },
   methods: {
-    async getVideos() {
-      const { items } = await getVideos();
-      this.videos = items;
-      console.log(items);
+    pause() {
+      this.showAD = true;
     },
-    convertTime(duration){
-return convertTime(duration)
+    play() {
+      this.showAD = false;
     },
-    increment() {
-      let pageNum = this.pagination_nr,
-        ends = this.helpers.end_to,
-        starts = this.helpers.start_from,
-        count = this.helpers.counter;
-
-      this.videos = this.database.slice(
-        pageNum * (count - 1),
-        pageNum * count
-      );
-
-      if (ends + pageNum < this.database.length) {
-        this.helpers.counter += 1;
-        this.helpers.end_to = ends + pageNum;
-        this.helpers.start_from = starts + pageNum;
-      } else {
-        this.helpers.end_to = this.database.length;
-        if (
-          ends + pageNum > this.database.length &&
-          ends + pageNum < this.database.length + pageNum
-        ) {
-          this.helpers.start_from = starts + pageNum;
-        }
-      }
-      console.log(count);
+    muteControl() {
+      var video = this.$refs.video;
+      this.mute = !this.mute;
+      video.muted = this.mute;
     },
-    decrement() {
-      let pageNum = this.pagination_nr,
-        ends = this.helpers.end_to,
-        starts = this.helpers.start_from,
-        count = this.helpers.counter - 1,
-        first = this.database.length % this.pagination_nr;
+  },
+  mounted() {
+    var video = this.$refs.video;
 
-      if (count >= 1) {
-        this.helpers.counter -= 1;
-        this.videos = this.database.slice(
-          pageNum * (count - 1),
-          pageNum * count
-        );
-      }
-
-      if (this.helpers.counter === 1) {
-        this.helpers.counter = 2;
-      }
-
-      console.log(count);
-
-      if (ends > pageNum) {
-        if (this.helpers.end_to % this.pagination_nr != 0) {
-          this.helpers.end_to -= first;
-          this.helpers.start_from = starts - pageNum;
-          return;
-        }
-        this.helpers.end_to = ends - pageNum;
-        this.helpers.start_from = starts - pageNum;
-      } else {
-        this.helpers.end_to = this.pagination_nr;
-        this.helpers.start_from = 1;
-      }
-    },
-    sort_tasks() {
-      function compare(a, b) {
-        const item1 = a.task.toUpperCase();
-        const item2 = b.task.toUpperCase();
-
-        let comparison = 0;
-        if (item1 > item2) {
-          comparison = 1;
-        } else if (item1 < item2) {
-          comparison = -1;
-        }
-        return comparison;
-      }
-
-      this.helpers.sort_task = true;
-      this.helpers.sort_priority = false;
-      this.helpers.sort_done = false;
-
-      this.database.sort(compare);
-    },
-    sort_priority() {
-      function compare(a, b) {
-        const item1 = a.priority.toUpperCase();
-        const item2 = b.priority.toUpperCase();
-
-        let comparison = 0;
-        if (item1 > item2) {
-          comparison = 1;
-        } else if (item1 < item2) {
-          comparison = -1;
-        }
-        return comparison;
-      }
-
-      this.helpers.sort_task = false;
-      this.helpers.sort_priority = true;
-      this.helpers.sort_done = false;
-
-      this.database.sort(compare);
-    },
-    sort_done() {
-      function compare(a, b) {
-        const item1 = a.done;
-        const item2 = b.done;
-
-        let comparison = 0;
-        if (item1 > item2) {
-          comparison = 1;
-        } else if (item1 < item2) {
-          comparison = -1;
-        }
-        return comparison;
-      }
-
-      this.helpers.sort_task = false;
-      this.helpers.sort_priority = false;
-      this.helpers.sort_done = true;
-
-      this.database.sort(compare);
-    },
+    if (Hls.isSupported()) {
+      var hls = new Hls();
+      hls.loadSource(VIDEO_URL);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, function () {
+        video.play();
+      });
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = VIDEO_URL;
+      video.addEventListener("loadedmetadata", function () {
+        video.play();
+      });
+    }
   },
 };
 </script>
 
-<style scoped lang="scss">
+
+<style lang="scss">
 /* Table of contents
 =====================
 // 1. Variables
@@ -228,134 +99,195 @@ return convertTime(duration)
 // 7. Animations
 =====================
 */
-
 // 1. Variables
-$pure-white: #ffffff;
-$wood-brown: #494430;
-$sweet-orange: #f79933;
-$hole-dark: #525252;
-$light-gray: #eeeef0;
-$middle-gray: #d6d6d6;
-$hell-dark: #1d1d1d; // 1. Font Faces
 // 2. Base
-.app {
-  min-width: 100%;
-  background: $pure-white;
-  font-size: 62.5%;
-  color: $hole-dark;
-  user-select: none;
-} // 3. Layout
-// 4. Block + element
-.app__table {
-  width: 100%;
-  // max-width: 670px;
-  min-width: 290px;
-  margin: 0 auto 100px auto;
-  font-size: 1rem;
-  text-align: left;
-  border: 1px solid $middle-gray;
-  box-shadow: 0 0 0 7px $light-gray;
-  border-collapse: collapse;
+h2 {
+  text-align: center;
 }
-
-thead {
-  background: $wood-brown;
-  color: $pure-white;
-  td {
-    border: none;
-    cursor: pointer;
+video {
+  width: 90% !important;
+  height: auto !important;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+  -moz-box-direction: normal;
+  -webkit-box-direction: normal;
+  max-width: 99%;
+  @media screen and (min-width: 700px) {
+    max-width: 60%;
   }
+  margin: 0 auto;
+  text-align: left;
 }
-
-td {
-  height: 47px;
-  padding-left: 15px;
+input[type="checkbox"] {
+  display: flex;
+  margin-left: 0;
 }
-
-.more {
-  width: 650px;
-  white-space: nowrap;
+input,
+select {
+  height: 36px;
+  border: 1px solid #efefef;
+  border-radius: 3px;
+  background-color: #fafafa;
+  width: 100%;
+  font-size: 12px;
+  padding: 9px 0 7px 8px;
+  outline: none;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-sizing: border-box;
+  margin: 10px 0 10px 0;
 }
-
-tbody {
-  td {
-    border-bottom: 1px solid $middle-gray;
-  }
+input#name:focus,
+input#password:focus {
+  border-color: #bbb;
 }
-
-.app__table-control {
-  text-align: right;
-  td {
-    padding-right: 30px;
-  }
+label {
+  font-size: 0.9rem;
+  color: #9b9b9b;
 }
-
-.app__table-select {
-  display: none;
+// 3. Layout
+// 4. Block + element
+.wrap {
   @media screen and (min-width: 420px) {
-    display: inline-block;
+    margin: 10px 40px;
+  }
+}
+.input__checkbox {
+  display: flex;
+  align-items: center;
+  @media screen and (min-width: 420px) {
+    margin: 10px 40px;
+  }
+}
+.button-wrap {
+  display: block;
+  position: relative;
+  
+}
+.btn {
+  cursor: pointer;
+  width: 50%;
+  margin: 8px 40px;
+  padding: 0 8px;
+  background: #01b7e5;
+  border: 1px solid #01b7e5;
+  color: #fff;
+  border-radius: 3px;
+  font-weight: 600;
+  font-size: 14px;
+  height: 35px;
+  line-height: 26px;
+  outline: none;
+  white-space: nowrap;
+}
+
+// 5. Modifier
+.is--incorrect {
+  color: #f44242;
+}
+.is--correct {
+  color: #41f48c;
+}
+@keyframes HPDKSWidget-raiseBanner {
+  0% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(0);
   }
 }
 
-select {
-  border: none;
-  color: $hole-dark;
-  font-size: 1rem;
-  width: 75px;
-  margin-right: 32px;
-  padding-left: 5px;
+.HPDKSWidget {
+  position: fixed;
+  bottom: 0;
+  display: block;
+  width: 100%;
+  z-index: 80;
+
+  background-color: #01b7e5;
+  background-image: linear-gradient(#01b7e5, darken(#01b7e5, 8%));
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  text-decoration: none;
+
+  animation-name: HPDKSWidget-raiseBanner;
+  animation-iteration-count: 1;
+  animation-timing-function: cubic-bezier(0.17, 0.04, 0.03, 0.94);
+  animation-duration: 0.8s;
+
+  &,
+  * {
+    box-sizing: border-box;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+
+  &:hover .HPDKSWidget-cta {
+    background: #2bde73;
+  }
 }
 
-input[type="checkbox"] {
-  display: none;
-}
-
-input[type="checkbox"] + label {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border-radius: 2px;
-  border: 2px solid $middle-gray;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-input[type="checkbox"]:checked + label {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border-radius: 2px;
-  background: $sweet-orange;
-  cursor: pointer;
-  position: relative;
-  border: 1px solid $sweet-orange;
-  transition: background 0.3s;
-}
-
-input[type="checkbox"]:checked + label:after {
-  content: "✓";
+.HPDKSWidget:before {
   position: absolute;
-  color: $pure-white;
-  top: -3px;
-  left: 2px;
+  top: -14px;
+  display: block;
+  width: 100%;
+  height: 14px;
+  content: "";
+  background-color: #01b7e5;
+  background-image: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 35"><polygon fill="%23ffffff" points="40,0 22.8,0 0,35 17.2,35 "/></svg>');
 }
 
-.ion-ios-arrow-left {
-  padding-right: 10px;
-  padding-left: 5px;
+.HPDKSWidget-wrap {
+  display: flex;
+  max-width: 49em;
+  margin: 0 auto;
+  padding: 0.5em 1em;
+
+  justify-content: space-around;
+  align-items: center;
 }
 
-.ion-ios-arrow-right {
-  padding-right: 10px;
-  padding-left: 5px;
+.HPDKSWidget-text {
+  margin: 0 2em 0 0;
+  line-height: 1.35;
+  color: #fff;
+  text-shadow: 0 0 1px #999;
 }
 
-.ion-ios-arrow-left,
-.ion-ios-arrow-right {
+.HPDKSWidget-brand {
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.HPDKSWidget-cta {
+  flex: 0 0 14em;
+  padding: 0.8em 1em;
+  border: none;
+  border-radius: 2px;
+  background: #2f2f2f;
+  font-size: 0.8125em;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: uppercase;
+  color: #fff;
   cursor: pointer;
-} // 5. Modifier
-// 6. State
-// 7. Animations
+
+  transition: background 0.5s ease;
+}
+
+@media (min-width: 780px) {
+  .HPDKSWidget {
+    font-size: 16px;
+  }
+}
+
+/* BODY OVERRIDES TO FIT BANNER */
+body {
+  margin: 0;
+  padding-bottom: 68px;
+}
 </style>
