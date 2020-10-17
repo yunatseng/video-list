@@ -19,7 +19,10 @@
       </thead>
       <tbody>
         <tr v-for="(video, index) in videos" :key="index">
-          <td><img :src="`${video.snippet.thumbnails.default.url}`" /></td>
+          <td><router-link :to="{ name: 'videoPage', params: { title: video.snippet.title,description: video.snippet.description}}">
+            <img :src="`${video.snippet.thumbnails.default.url}`" />
+            </router-link>
+            </td>
           <td>
             {{ video.snippet.title }}
             <div>
