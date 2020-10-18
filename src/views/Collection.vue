@@ -1,6 +1,6 @@
 <template>
   <div class="collection">
-    <a href="/collection"><img width="120" src="../assets/favorite.png"></a>
+    <img width="120" src="../assets/favorite.png">
     <AppTable :videos="videos" @cancel='cancel'/>
   </div>
 </template>

@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <a href="/"><img width="150" src="../assets/logo.png" /></a>
+    <img width="150" src="../assets/logo.png" />
     <AppTable :videos="videos" />
   </div>
 </template>

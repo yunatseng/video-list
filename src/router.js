@@ -24,5 +24,6 @@ export default new Router({
       component: Video
     }
   ],
-  mode: 'history'
+  mode: 'hash',
+  base: '/video-list',
 })
