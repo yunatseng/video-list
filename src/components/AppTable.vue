@@ -3,17 +3,14 @@
     <table class="app__table">
       <thead>
         <tr v-for="(header, index) in headers" :key="index">
-          <td @click="sort_tasks('task')">
+          <td>
             {{ header.first }}
-            <span v-if="helpers.sort_task">↓</span>
           </td>
-          <td @click="sort_priority('priority')">
+          <td>
             {{ header.second }}
-            <span v-if="helpers.sort_priority">↓</span>
           </td>
-          <td @click="sort_done('done')">
+          <td>
             {{ header.third }}
-            <span v-if="helpers.sort_done">↓</span>
           </td>
         </tr>
       </thead>
@@ -100,22 +97,12 @@ export default {
   data() {
     return {
       favVideos: JSON.parse(localStorage.getItem(`favorite-videos`)) || [],
-
       currentPage: 1,
-
       pagination_nr: 5,
-      helpers: {
-        start_from: 1,
-        end_to: 5,
-        counter: 2,
-        sort_task: false,
-        sort_priority: false,
-        sort_done: false,
-      },
     };
   },
   computed: {
-    ...mapState(["database", "headers", "headers_on"]),
+    ...mapState(["headers"]),
 
     totalPages() {
       return Math.ceil(this.videos.length / 12);
@@ -123,40 +110,21 @@ export default {
     chunkVidoes() {
       const { videos, totalPages } = this;
 
-      // [a, b, c, d] => 3 => [[a, b, c], [d]]
+      // [a, b, c, d] => chunk 3 => [[a, b, c], [d]]
       const chunks = [];
 
-      // totalVideos.slice(0, 12); push chunks
-      // -> totalVideos.slice(12, 24); push chunks
+      // totalVideos.slice(0, 12); => push chunks
+      // -> totalVideos.slice(12, 24); => push chunks
       // -> ...
       for (let i = 0; i < totalPages; i++) {
         const chunk = videos.slice(12 * i, 12 * (i + 1));
         chunks.push(chunk);
         console.log(chunks);
       }
-
       return chunks;
     },
   },
-  watch: {
-    pagination_nr() {
-      this.videos = this.database.slice(0, this.pagination_nr);
-      this.helpers.start_from = 1;
-      this.helpers.end_to = this.pagination_nr;
-      this.helpers.counter = 2;
-    },
-    database() {
-      this.videos = this.database.slice(0, this.pagination_nr);
-    },
-  },
-  async created() {
-    // this.videos = this.database.slice(0, this.pagination_nr);
-    // if (localStorage.getItem("newTask")) {
-    //   let localState = localStorage.getItem("newTask");
-    //   this.$store.commit("build_DataBase", localState);
-    // }
-    // this.getVideos();
-  },
+  watch: {},
   methods: {
     extrat(str) {
       if (str.length <= 100) return str;
@@ -204,82 +172,15 @@ export default {
       if (this.currentPage === 1) return;
       this.currentPage--;
     },
-    sort_tasks() {
-      function compare(a, b) {
-        const item1 = a.task.toUpperCase();
-        const item2 = b.task.toUpperCase();
-
-        let comparison = 0;
-        if (item1 > item2) {
-          comparison = 1;
-        } else if (item1 < item2) {
-          comparison = -1;
-        }
-        return comparison;
-      }
-
-      this.helpers.sort_task = true;
-      this.helpers.sort_priority = false;
-      this.helpers.sort_done = false;
-
-      this.database.sort(compare);
-    },
-    sort_priority() {
-      function compare(a, b) {
-        const item1 = a.priority.toUpperCase();
-        const item2 = b.priority.toUpperCase();
-
-        let comparison = 0;
-        if (item1 > item2) {
-          comparison = 1;
-        } else if (item1 < item2) {
-          comparison = -1;
-        }
-        return comparison;
-      }
-
-      this.helpers.sort_task = false;
-      this.helpers.sort_priority = true;
-      this.helpers.sort_done = false;
-
-      this.database.sort(compare);
-    },
-    sort_done() {
-      function compare(a, b) {
-        const item1 = a.done;
-        const item2 = b.done;
-
-        let comparison = 0;
-        if (item1 > item2) {
-          comparison = 1;
-        } else if (item1 < item2) {
-          comparison = -1;
-        }
-        return comparison;
-      }
-
-      this.helpers.sort_task = false;
-      this.helpers.sort_priority = false;
-      this.helpers.sort_done = true;
-
-      this.database.sort(compare);
-    },
+    
+    
+    
   },
 };
 </script>
 
 <style scoped lang="scss">
-/* Table of contents
-=====================
-// 1. Variables
-// 2. Base
-// 3. Layout
-// 4. Block + element
-// 5. Modifier
-// 6. State
-// 7. Animations
-=====================
-*/
+
 
 // 1. Variables
 $pure-white: #ffffff;
@@ -330,7 +231,7 @@ td {
 .more {
   max-width: 150px;
   @media screen and (min-width: 641px) {
-  max-width: 900px;
+    max-width: 900px;
   }
 }
 
@@ -355,49 +256,6 @@ tbody {
   }
 }
 
-select {
-  border: none;
-  color: $hole-dark;
-  font-size: 1rem;
-  width: 75px;
-  margin-right: 32px;
-  padding-left: 5px;
-}
-
-input[type="checkbox"] {
-  display: none;
-}
-
-input[type="checkbox"] + label {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border-radius: 2px;
-  border: 2px solid $middle-gray;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-input[type="checkbox"]:checked + label {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border-radius: 2px;
-  background: $sweet-orange;
-  cursor: pointer;
-  position: relative;
-  border: 1px solid $sweet-orange;
-  transition: background 0.3s;
-}
-
-input[type="checkbox"]:checked + label:after {
-  content: "✓";
-  position: absolute;
-  color: $pure-white;
-  top: -3px;
-  left: 2px;
-}
-
 .ion-ios-arrow-left {
   padding-right: 10px;
   padding-left: 10px;
@@ -412,11 +270,6 @@ input[type="checkbox"]:checked + label:after {
   display: flex;
   cursor: pointer;
 }
-// .pagination li,
-// .ion-ios-arrow-left,
-// .ion-ios-arrow-right {
-//   cursor: pointer;
-// } 
 
 .pagination-wrapper {
   display: flex;
@@ -435,7 +288,7 @@ input[type="checkbox"]:checked + label:after {
   width: 20px;
   height: 20px;
   text-align: center;
-  &:hover{
+  &:hover {
     font-weight: bold;
   }
 }
@@ -448,7 +301,7 @@ input[type="checkbox"]:checked + label:after {
 .btn-disfav {
   background-color: lemonchiffon;
   &:hover {
-    background-color:rgb(239, 239, 239);
+    background-color: rgb(239, 239, 239);
     font-weight: bold;
   }
 }
@@ -466,7 +319,7 @@ input[type="checkbox"]:checked + label:after {
   border-radius: 50%;
 }
 span {
-  &:hover{
+  &:hover {
     font-weight: bold;
   }
 }

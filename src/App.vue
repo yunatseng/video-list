@@ -42,7 +42,4 @@ a {
   }
 }
 
-.router-link-exact-active {
-  
-}
 </style>
