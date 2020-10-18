@@ -8,7 +8,7 @@
 <script>
 // @ is an alias to /src
 import AppTable from "@/components/AppTable.vue";
-import { getVideos } from "../apis/videos";
+import { getVideos, getNextVideos } from "../apis/videos";
 export default {
   name: "home",
   data() {
@@ -19,13 +19,20 @@ export default {
   components: {
     AppTable,
   },
-  created(){
+  created() {
     this.getVideos();
   },
   methods: {
     async getVideos() {
-      const { items } = await getVideos();
-      this.videos = items;
+      let totalVideos = [];
+
+      const { items, nextPageToken } = await getVideos();
+      totalVideos = [...items];
+
+      const { items: lastItems } = await getNextVideos(nextPageToken);
+      totalVideos = [...totalVideos, ...lastItems];
+
+      this.videos = totalVideos;
     },
   },
 };

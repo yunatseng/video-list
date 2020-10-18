@@ -18,7 +18,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(video, index) in videos" :key="index">
+        <tr v-for="(video, index) in chunkVidoes[currentPage - 1]" :key="index">
           <td>
             <router-link
               :to="{
@@ -38,34 +38,44 @@
               影片長度：{{ convertTime(video.contentDetails.duration) }}
             </div>
           </td>
-          <td>
-            <div :title="video.snippet.description" class="more">
-              {{ video.snippet.description }}
+          <td class="more">
+            <div :title="video.snippet.description">
+              {{ extrat(video.snippet.description) }}
             </div>
-            <button
-              v-if="isInCollection(video.id)"
-              @click="cancelCollect(video)"
-            >
-              取消收藏
-            </button>
-            <button v-else @click="collect(video)">我要收藏</button>
+            <div class="btn-container">
+              <button
+                class="btn-disfav"
+                v-if="isInCollection(video.id)"
+                @click="cancelCollect(video)"
+              >
+                取消收藏
+              </button>
+              <button class="btn-fav" v-else @click="collect(video)">
+                我要收藏
+              </button>
+            </div>
           </td>
         </tr>
         <tr class="app__table-control">
           <td colspan="3">
             <div class="pagination-wrapper">
-              <div class="app__table-select">
-                Rows per page: 12
-              </div>
+              <div class="app__table-select">Rows per page: 12</div>
 
-              <div style="display: flex">
-                <span>first</span>
+              <div class="page-navi">
+                <span @click="first">first</span>
                 <span @click="decrement" class="ion-ios-arrow-left"></span>
                 <ul class="pagination">
-                  <li :key='i' v-for="(n, i) in 10">{{n }}</li>
+                  <li
+                    v-for="page in totalPages"
+                    :key="page"
+                    :class="{ currentPage: currentPage === page }"
+                    @click="navPage(page)"
+                  >
+                    {{ page }}
+                  </li>
                 </ul>
                 <span @click="increment" class="ion-ios-arrow-right"></span>
-                <span>least</span>
+                <span @click="least">least</span>
               </div>
             </div>
           </td>
@@ -91,6 +101,8 @@ export default {
     return {
       favVideos: JSON.parse(localStorage.getItem(`favorite-videos`)) || [],
 
+      currentPage: 1,
+
       pagination_nr: 5,
       helpers: {
         start_from: 1,
@@ -102,7 +114,30 @@ export default {
       },
     };
   },
-  computed: mapState(["database", "headers", "headers_on"]),
+  computed: {
+    ...mapState(["database", "headers", "headers_on"]),
+
+    totalPages() {
+      return Math.ceil(this.videos.length / 12);
+    },
+    chunkVidoes() {
+      const { videos, totalPages } = this;
+
+      // [a, b, c, d] => 3 => [[a, b, c], [d]]
+      const chunks = [];
+
+      // totalVideos.slice(0, 12); push chunks
+      // -> totalVideos.slice(12, 24); push chunks
+      // -> ...
+      for (let i = 0; i < totalPages; i++) {
+        const chunk = videos.slice(12 * i, 12 * (i + 1));
+        chunks.push(chunk);
+        console.log(chunks);
+      }
+
+      return chunks;
+    },
+  },
   watch: {
     pagination_nr() {
       this.videos = this.database.slice(0, this.pagination_nr);
@@ -123,6 +158,11 @@ export default {
     // this.getVideos();
   },
   methods: {
+    extrat(str) {
+      if (str.length <= 100) return str;
+      return str.slice(0, 100) + "...";
+    },
+
     collect(video) {
       if (this.favVideos.some((v) => v.id === video.id)) return;
 
@@ -147,62 +187,22 @@ export default {
       return convertTime(duration);
     },
 
+    navPage(page) {
+      this.currentPage = page;
+    },
+    first() {
+      this.currentPage = 1;
+    },
+    least() {
+      this.currentPage = this.totalPages;
+    },
     increment() {
-      let pageNum = this.pagination_nr,
-        ends = this.helpers.end_to,
-        starts = this.helpers.start_from,
-        count = this.helpers.counter;
-
-      this.videos = this.database.slice(pageNum * (count - 1), pageNum * count);
-
-      if (ends + pageNum < this.database.length) {
-        this.helpers.counter += 1;
-        this.helpers.end_to = ends + pageNum;
-        this.helpers.start_from = starts + pageNum;
-      } else {
-        this.helpers.end_to = this.database.length;
-        if (
-          ends + pageNum > this.database.length &&
-          ends + pageNum < this.database.length + pageNum
-        ) {
-          this.helpers.start_from = starts + pageNum;
-        }
-      }
-      console.log(count);
+      if (this.currentPage === this.totalPages) return;
+      this.currentPage++;
     },
     decrement() {
-      let pageNum = this.pagination_nr,
-        ends = this.helpers.end_to,
-        starts = this.helpers.start_from,
-        count = this.helpers.counter - 1,
-        first = this.database.length % this.pagination_nr;
-
-      if (count >= 1) {
-        this.helpers.counter -= 1;
-        this.videos = this.database.slice(
-          pageNum * (count - 1),
-          pageNum * count
-        );
-      }
-
-      if (this.helpers.counter === 1) {
-        this.helpers.counter = 2;
-      }
-
-      console.log(count);
-
-      if (ends > pageNum) {
-        if (this.helpers.end_to % this.pagination_nr != 0) {
-          this.helpers.end_to -= first;
-          this.helpers.start_from = starts - pageNum;
-          return;
-        }
-        this.helpers.end_to = ends - pageNum;
-        this.helpers.start_from = starts - pageNum;
-      } else {
-        this.helpers.end_to = this.pagination_nr;
-        this.helpers.start_from = 1;
-      }
+      if (this.currentPage === 1) return;
+      this.currentPage--;
     },
     sort_tasks() {
       function compare(a, b) {
@@ -320,15 +320,18 @@ thead {
 }
 
 td {
+  padding-left: 1px;
   height: 47px;
-  padding-left: 15px;
+  @media screen and (min-width: 641px) {
+    padding-left: 15px;
+  }
 }
 
 .more {
-  max-width: 650px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 150px;
+  @media screen and (min-width: 641px) {
+  max-width: 900px;
+  }
 }
 
 tbody {
@@ -346,7 +349,7 @@ tbody {
 
 .app__table-select {
   display: none;
-  @media screen and (min-width: 420px) {
+  @media screen and (min-width: 641px) {
     display: flex;
     margin-right: 20px;
   }
@@ -405,12 +408,15 @@ input[type="checkbox"]:checked + label:after {
   padding-left: 10px;
 }
 
-.ion-ios-arrow-left,
-.ion-ios-arrow-right {
+.page-navi {
+  display: flex;
   cursor: pointer;
-} // 5. Modifier
-// 6. State
-// 7. Animations
+}
+// .pagination li,
+// .ion-ios-arrow-left,
+// .ion-ios-arrow-right {
+//   cursor: pointer;
+// } 
 
 .pagination-wrapper {
   display: flex;
@@ -425,6 +431,43 @@ input[type="checkbox"]:checked + label:after {
 }
 
 .pagination li {
-  margin: 0 7px;
+  margin: 0 2px;
+  width: 20px;
+  height: 20px;
+  text-align: center;
+  &:hover{
+    font-weight: bold;
+  }
+}
+
+.btn-container {
+  padding: 16px;
+  text-align: right;
+}
+
+.btn-disfav {
+  background-color: lemonchiffon;
+  &:hover {
+    background-color:rgb(239, 239, 239);
+    font-weight: bold;
+  }
+}
+
+.btn-fav {
+  &:hover {
+    background-color: lemonchiffon;
+    font-weight: bold;
+  }
+}
+
+.currentPage {
+  background-color: #01b7e5;
+  color: white;
+  border-radius: 50%;
+}
+span {
+  &:hover{
+    font-weight: bold;
+  }
 }
 </style>
