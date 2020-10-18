@@ -16,10 +16,6 @@ export default {
       videos: JSON.parse(localStorage.getItem(`favorite-videos`)) || [],
     };
   },
-  created(){
-    // const items = { ...localStorage };
-    // console.log(items);
-  },
   methods:{
       cancel(){
           this.videos = JSON.parse(localStorage.getItem(`favorite-videos`)) || []
@@ -28,11 +24,5 @@ export default {
   components: {
     AppTable
   },
-  // watch:{
-  //     videos: function() {
-  //       this.videos = JSON.parse(localStorage.getItem(`favorite-videos`))
-  //     }
-
-  // }
 }
 </script>
