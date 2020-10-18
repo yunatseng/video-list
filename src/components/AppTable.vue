@@ -119,7 +119,6 @@ export default {
       for (let i = 0; i < totalPages; i++) {
         const chunk = videos.slice(12 * i, 12 * (i + 1));
         chunks.push(chunk);
-        console.log(chunks);
       }
       return chunks;
     },
